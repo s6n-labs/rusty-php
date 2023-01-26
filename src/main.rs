@@ -2,9 +2,11 @@
 #![allow(unused)]
 #![warn(unused_imports)]
 
+use std::env::args;
 use std::error::Error;
 use std::ffi::{c_char, c_double, c_int, c_uint, c_void, CStr, CString};
-use std::io::{stderr, stdout, Write};
+use std::io::{stderr, stdin, stdout, Write};
+use std::mem::MaybeUninit;
 use std::ptr::null_mut;
 
 use lazy_static::lazy_static;
@@ -14,13 +16,13 @@ use tracing::level_filters::LevelFilter;
 use tracing::{debug, error, warn};
 use tracing_subscriber::EnvFilter;
 
-use crate::ext::standard::info::PHP_INFO_ALL;
 use crate::ext::{Extensions, ExtensionsRaw};
 use crate::sapi::{
     SapiHeaderOpEnum, SapiHeaderStruct, SapiHeadersStruct, SapiModuleStruct,
     SAPI_HEADER_SENT_SUCCESSFULLY,
 };
-use crate::zend::{HashTable, ZendResult, ZendResultCode, ZendStat, Zval};
+use crate::zend::stream::ZendFileHandle;
+use crate::zend::{HashTable, Zend, ZendRaw, ZendResult, ZendResultCode, ZendStat, Zval};
 
 mod ext;
 mod sapi;
@@ -72,11 +74,12 @@ php_lib! {
         php_request_shutdown: extern "C" fn(dummy: *mut c_void) -> ZendResult,
         php_module_startup: extern "C" fn(*mut SapiModuleStruct, *mut c_void) -> ZendResult,
         php_module_shutdown: extern "C" fn(),
+        php_execute_script: extern "C" fn(*mut ZendFileHandle),
         sapi_startup: extern "C" fn(*mut SapiModuleStruct),
         sapi_shutdown: extern "C" fn(),
-        zend_signal_startup: extern "C" fn(),
         {
             ext: Extensions<ExtensionsRaw>,
+            zend: Zend<ZendRaw>,
         }
     }
 }
@@ -304,7 +307,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         input_filter_init: on_input_filter_init,
     };
 
-    (PHP.zend_signal_startup)();
+    (PHP.zend.zend_signal_startup)();
     debug!("OK: zend_signal_startup");
 
     (PHP.sapi_startup)(&mut module as *mut SapiModuleStruct);
@@ -315,13 +318,33 @@ fn main() -> Result<(), Box<dyn Error>> {
         ZendResult::Failure => error!("NG: php_module_startup"),
     }
 
+    let stdin = stdin().lock();
+    let mut file = {
+        let mut handle = MaybeUninit::<ZendFileHandle>::uninit();
+
+        (PHP.zend.stream.zend_stream_init_filename)(
+            handle.as_mut_ptr(),
+            create_cstring(args().nth(1).unwrap().as_bytes()).into_raw(),
+        );
+        debug!("OK: zend_stream_init_fp");
+
+        let mut file_handle = unsafe { handle.assume_init() };
+        file_handle.primary_script = true;
+        file_handle
+    };
+
     match (PHP.php_request_startup)() {
         ZendResult::Success => debug!("OK: php_request_startup"),
         ZendResult::Failure => error!("NG: php_request_startup"),
     }
 
-    (PHP.ext.standard.info.php_print_info)(PHP_INFO_ALL);
-    debug!("OK: php_print_info");
+    // (PHP.ext.standard.info.php_print_info)(PHP_INFO_GENERAL);
+    // debug!("OK: php_print_info");
+
+    // TODO: Register stdio handles for echo/print functions
+
+    (PHP.php_execute_script)(&mut file as *mut ZendFileHandle);
+    debug!("OK: php_execute_script");
 
     (PHP.php_module_shutdown)();
     debug!("OK: php_module_shutdown");

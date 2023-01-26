@@ -3,7 +3,11 @@ use std::mem::ManuallyDrop;
 
 use nix::sys::stat::FileStat;
 
+use crate::php_lib;
 use crate::zend::long::{ZendLong, ZendUlong};
+use crate::zend::stream::{Stream, StreamRaw};
+
+pub mod stream;
 
 #[repr(C)]
 #[derive(PartialEq)]
@@ -13,6 +17,7 @@ pub enum ZendResultCode {
 }
 
 pub type ZendResult = ZendResultCode;
+pub type ZendUchar = c_uchar;
 
 #[cfg(feature = "zend_enable_zval_long64")]
 mod long {
@@ -134,4 +139,13 @@ pub struct ZendLlist {
     dtor: LlistDtorFunc,
     persistent: c_uchar,
     traverse_ptr: *mut ZendLlistElement,
+}
+
+php_lib! {
+    pub struct Zend<ZendRaw> {
+        pub zend_signal_startup: extern "C" fn(),
+        {
+            pub stream: Stream<StreamRaw>,
+        }
+    }
 }
