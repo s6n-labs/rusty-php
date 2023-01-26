@@ -1,7 +1,7 @@
 # ⚙️🐘 rusty-php
 PHP SAPI implementation in Rust.
 
-> **warning**  
+> **Warning**  
 > This is an experimental project and in development.
 > Do not use in production.
 
