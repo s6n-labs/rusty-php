@@ -326,7 +326,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             handle.as_mut_ptr(),
             create_cstring(args().nth(1).unwrap().as_bytes()).into_raw(),
         );
-        debug!("OK: zend_stream_init_fp");
+        debug!("OK: zend_stream_init_filename");
 
         let mut file_handle = unsafe { handle.assume_init() };
         file_handle.primary_script = true;
