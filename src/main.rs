@@ -5,10 +5,11 @@
 use std::env::args;
 use std::error::Error;
 use std::ffi::{c_char, c_double, c_int, c_uint, c_void, CStr, CString};
-use std::io::{stderr, stdin, stdout, Write};
+use std::io::{stderr, stdout, Write};
 use std::mem::MaybeUninit;
 use std::ptr::null_mut;
 
+use clap::{Parser, Subcommand};
 use lazy_static::lazy_static;
 use libc::{gid_t, uid_t};
 use libloading::Library;
@@ -258,6 +259,18 @@ fn create_cstring(bytes: &[u8]) -> CString {
     unsafe { CString::from_vec_unchecked(bytes.to_vec()) }
 }
 
+#[derive(Subcommand)]
+enum Action {
+    Eval { script: String },
+    Execute { filename: String },
+}
+
+#[derive(Parser)]
+struct Cli {
+    #[clap(subcommand)]
+    action: Action,
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::fmt()
         .compact()
@@ -270,6 +283,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .with_writer(stderr)
         .init();
+
+    let cli = Cli::parse();
 
     let mut module = SapiModuleStruct {
         name: create_cstring(NAME).into_raw(),
@@ -321,21 +336,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         ZendResult::Failure => error!("NG: php_module_startup"),
     }
 
-    let stdin = stdin().lock();
-    let mut file = {
-        let mut handle = MaybeUninit::<ZendFileHandle>::uninit();
-
-        (PHP.zend.stream.zend_stream_init_filename)(
-            handle.as_mut_ptr(),
-            create_cstring(args().nth(1).unwrap().as_bytes()).into_raw(),
-        );
-        debug!("OK: zend_stream_init_filename");
-
-        let mut file_handle = unsafe { handle.assume_init() };
-        file_handle.primary_script = true;
-        file_handle
-    };
-
     match (PHP.php_request_startup)() {
         ZendResult::Success => debug!("OK: php_request_startup"),
         ZendResult::Failure => error!("NG: php_request_startup"),
@@ -371,8 +371,33 @@ fn main() -> Result<(), Box<dyn Error>> {
     );
     debug!("OK: php_stream_open_wrapper_ex {:?}", stderr);
 
-    (PHP.php_execute_script)(&mut file as *mut ZendFileHandle);
-    debug!("OK: php_execute_script");
+    match &cli.action {
+        Action::Eval { script } => {
+            let mut retval = MaybeUninit::<Zval>::uninit();
+
+            (PHP.zend.execute.zend_eval_string_ex)(
+                create_cstring(script.as_bytes()).into_raw(),
+                retval.as_mut_ptr(),
+                create_cstring(b"Command line begin code").into_raw(),
+                true,
+            );
+        }
+        Action::Execute { filename } => {
+            let mut file_handle = MaybeUninit::<ZendFileHandle>::uninit();
+
+            (PHP.zend.stream.zend_stream_init_filename)(
+                file_handle.as_mut_ptr(),
+                create_cstring(args().nth(1).unwrap().as_bytes()).into_raw(),
+            );
+            debug!("OK: zend_stream_init_filename");
+
+            let mut file_handle = unsafe { file_handle.assume_init() };
+            file_handle.primary_script = true;
+
+            (PHP.php_execute_script)(&mut file_handle as *mut ZendFileHandle);
+            debug!("OK: php_execute_script");
+        }
+    };
 
     (PHP.php_module_shutdown)();
     debug!("OK: php_module_shutdown");
