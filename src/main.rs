@@ -21,11 +21,13 @@ use crate::sapi::{
     SapiHeaderOpEnum, SapiHeaderStruct, SapiHeadersStruct, SapiModuleStruct,
     SAPI_HEADER_SENT_SUCCESSFULLY,
 };
+use crate::streams::{Streams, StreamsRaw};
 use crate::zend::stream::ZendFileHandle;
 use crate::zend::{HashTable, Zend, ZendRaw, ZendResult, ZendResultCode, ZendStat, Zval};
 
 mod ext;
 mod sapi;
+mod streams;
 mod zend;
 
 const NAME: &[u8] = b"rusty-php";
@@ -79,6 +81,7 @@ php_lib! {
         sapi_shutdown: extern "C" fn(),
         {
             ext: Extensions<ExtensionsRaw>,
+            streams: Streams<StreamsRaw>,
             zend: Zend<ZendRaw>,
         }
     }
@@ -341,7 +344,32 @@ fn main() -> Result<(), Box<dyn Error>> {
     // (PHP.ext.standard.info.php_print_info)(PHP_INFO_GENERAL);
     // debug!("OK: php_print_info");
 
-    // TODO: Register stdio handles for echo/print functions
+    let stdin = (PHP.streams._php_stream_open_wrapper_ex)(
+        create_cstring(b"php://stdin").into_raw(),
+        create_cstring(b"rb").into_raw(),
+        0,
+        null_mut(),
+        null_mut(),
+    );
+    debug!("OK: php_stream_open_wrapper_ex {:?}", stdin);
+
+    let stdout = (PHP.streams._php_stream_open_wrapper_ex)(
+        create_cstring(b"php://stdout").into_raw(),
+        create_cstring(b"wb").into_raw(),
+        0,
+        null_mut(),
+        null_mut(),
+    );
+    debug!("OK: php_stream_open_wrapper_ex {:?}", stdout);
+
+    let stderr = (PHP.streams._php_stream_open_wrapper_ex)(
+        create_cstring(b"php://stderr").into_raw(),
+        create_cstring(b"wb").into_raw(),
+        0,
+        null_mut(),
+        null_mut(),
+    );
+    debug!("OK: php_stream_open_wrapper_ex {:?}", stderr);
 
     (PHP.php_execute_script)(&mut file as *mut ZendFileHandle);
     debug!("OK: php_execute_script");
