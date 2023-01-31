@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::ffi::c_uint;
 
 use crate::php_lib;

@@ -314,14 +314,27 @@ dependencies = [
 name = "rusty-php"
 version = "0.1.0"
 dependencies = [
- "clap",
- "lazy_static",
  "libc",
  "libloading",
  "nix",
  "tracing",
+]
+
+[[package]]
+name = "rusty-php-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "lazy_static",
+ "libc",
+ "rusty-php",
+ "tracing",
  "tracing-subscriber",
 ]
+
+[[package]]
+name = "rusty-php-http"
+version = "0.1.0"
 
 [[package]]
 name = "sharded-slab"
