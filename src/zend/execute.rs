@@ -5,7 +5,7 @@ use crate::zend::{ZendResult, Zval};
 
 php_lib! {
     pub struct Execute<ExecuteRaw> {
-        pub zend_eval_string_ex: extern "C" fn(
+        pub zend_eval_string_ex: fn(
             str: *const c_char,
             retval_ptr: *mut Zval,
             string_name: *const c_char,

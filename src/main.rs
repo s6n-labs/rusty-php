@@ -12,8 +12,8 @@ use std::ptr::null_mut;
 use clap::{Parser, Subcommand};
 use lazy_static::lazy_static;
 use libc::{gid_t, uid_t};
-use libloading::Library;
 use libloading::os::unix::{RTLD_GLOBAL, RTLD_NOW};
+use libloading::Library;
 use tracing::level_filters::LevelFilter;
 use tracing::{debug, error, warn};
 use tracing_subscriber::EnvFilter;
@@ -38,9 +38,14 @@ const PHP_PATH: &[u8] = b"/opt/homebrew/bin/php";
 
 #[macro_export]
 macro_rules! php_lib {
-    ($v:vis struct $n:ident < $m:ident > { $($fv:vis $f:ident : $t:ty ,)* $({ $( $sv:vis $s:ident : $st:ident < $str:ty >,)* })? }) => {
+    (
+        $v:vis struct $n:ident < $m:ident > {
+            $($fv:vis $f:ident : fn( $($arg_name:ident : $arg_ty:ty ,)* ) $(-> $ret:ty)?,)*
+            $({ $( $sv:vis $s:ident : $st:ident < $str:ty >,)* })?
+        }
+    ) => {
         $v struct $n<'lib> {
-            $($fv $f: libloading::Symbol<'lib, $t>,)*
+            $($fv $f: libloading::Symbol<'lib, fn ($($arg_name: $arg_ty,)*) $(-> $ret)?>,)*
             $($($sv $s: $st<'lib>,)*)?
             $v _phantom: &'lib std::marker::PhantomData<()>,
         }
@@ -66,21 +71,30 @@ macro_rules! php_lib {
         }
 
         $v struct $m {
-            $($fv $f: libloading::os::unix::Symbol<$t>,)*
+            $($fv $f: libloading::os::unix::Symbol<fn ($($arg_name: $arg_ty,)*) $(-> $ret)?>,)*
             $($($sv $s: $str,)*)?
+        }
+
+        impl $m {
+            $($v fn $f(&self, $($arg_name: $arg_ty,)*) $(-> $ret)? {
+                tracing::debug!("BEGIN: {}", stringify!($f));
+                let ret = (self.$f)($($arg_name,)*);
+                tracing::debug!("OK: {}", stringify!($f));
+                ret
+            })*
         }
     }
 }
 
 php_lib! {
     struct Php<PhpRaw> {
-        php_request_startup: extern "C" fn() -> ZendResult,
-        php_request_shutdown: extern "C" fn(dummy: *mut c_void) -> ZendResult,
-        php_module_startup: extern "C" fn(*mut SapiModuleStruct, *mut c_void) -> ZendResult,
-        php_module_shutdown: extern "C" fn(),
-        php_execute_script: extern "C" fn(*mut ZendFileHandle),
-        sapi_startup: extern "C" fn(*mut SapiModuleStruct),
-        sapi_shutdown: extern "C" fn(),
+        php_request_startup: fn() -> ZendResult,
+        php_request_shutdown: fn(dummy: *mut c_void,) -> ZendResult,
+        php_module_startup: fn(sf: *mut SapiModuleStruct, additional_module: *mut c_void,) -> ZendResult,
+        php_module_shutdown: fn(),
+        php_execute_script: fn(primary_file: *mut ZendFileHandle,),
+        sapi_startup: fn(sf: *mut SapiModuleStruct,),
+        sapi_shutdown: fn(),
         {
             ext: Extensions<ExtensionsRaw>,
             streams: Streams<StreamsRaw>,
@@ -91,7 +105,9 @@ php_lib! {
 
 fn load_php() -> Result<PhpRaw, Box<dyn Error>> {
     #[cfg(unix)]
-    let php = unsafe { libloading::os::unix::Library::open(Some("/opt/homebrew/bin/php"),  RTLD_NOW | RTLD_GLOBAL) }?;
+    let php = unsafe {
+        libloading::os::unix::Library::open(Some("/opt/homebrew/bin/php"), RTLD_NOW | RTLD_GLOBAL)
+    }?;
 
     #[cfg(not(unix))]
     let php = unsafe { Library::new("/opt/homebrew/bin/php") }?;
@@ -351,38 +367,35 @@ fn main() -> Result<(), Box<dyn Error>> {
     // (PHP.ext.standard.info.php_print_info)(PHP_INFO_GENERAL);
     // debug!("OK: php_print_info");
 
-    let stdin = (PHP.streams._php_stream_open_wrapper_ex)(
+    let stdin = PHP.streams._php_stream_open_wrapper_ex(
         create_cstring(b"php://stdin").into_raw(),
         create_cstring(b"rb").into_raw(),
         0,
         null_mut(),
         null_mut(),
     );
-    debug!("OK: php_stream_open_wrapper_ex {:?}", stdin);
 
-    let stdout = (PHP.streams._php_stream_open_wrapper_ex)(
+    let stdout = PHP.streams._php_stream_open_wrapper_ex(
         create_cstring(b"php://stdout").into_raw(),
         create_cstring(b"wb").into_raw(),
         0,
         null_mut(),
         null_mut(),
     );
-    debug!("OK: php_stream_open_wrapper_ex {:?}", stdout);
 
-    let stderr = (PHP.streams._php_stream_open_wrapper_ex)(
+    let stderr = PHP.streams._php_stream_open_wrapper_ex(
         create_cstring(b"php://stderr").into_raw(),
         create_cstring(b"wb").into_raw(),
         0,
         null_mut(),
         null_mut(),
     );
-    debug!("OK: php_stream_open_wrapper_ex {:?}", stderr);
 
     match &cli.action {
         Action::Eval { script } => {
             let mut retval = MaybeUninit::<Zval>::uninit();
 
-            (PHP.zend.execute.zend_eval_string_ex)(
+            PHP.zend.execute.zend_eval_string_ex(
                 create_cstring(script.as_bytes()).into_raw(),
                 retval.as_mut_ptr(),
                 create_cstring(b"Command line begin code").into_raw(),
@@ -392,25 +405,20 @@ fn main() -> Result<(), Box<dyn Error>> {
         Action::Execute { filename } => {
             let mut file_handle = MaybeUninit::<ZendFileHandle>::uninit();
 
-            (PHP.zend.stream.zend_stream_init_filename)(
+            PHP.zend.stream.zend_stream_init_filename(
                 file_handle.as_mut_ptr(),
                 create_cstring(args().nth(1).unwrap().as_bytes()).into_raw(),
             );
-            debug!("OK: zend_stream_init_filename");
 
             let mut file_handle = unsafe { file_handle.assume_init() };
             file_handle.primary_script = true;
 
-            (PHP.php_execute_script)(&mut file_handle as *mut ZendFileHandle);
-            debug!("OK: php_execute_script");
+            PHP.php_execute_script(&mut file_handle as *mut ZendFileHandle);
         }
     };
 
-    (PHP.php_module_shutdown)();
-    debug!("OK: php_module_shutdown");
-
-    (PHP.sapi_shutdown)();
-    debug!("OK: sapi_shutdown");
+    PHP.php_module_shutdown();
+    PHP.sapi_shutdown();
 
     Ok(())
 }

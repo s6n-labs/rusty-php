@@ -40,7 +40,7 @@ pub struct ZendFileHandle {
 
 php_lib! {
     pub struct Stream<StreamRaw> {
-        pub zend_stream_init_fp: extern "C" fn(handle: *mut ZendFileHandle, fp: RawFd, filename: *const c_char),
-        pub zend_stream_init_filename: extern "C" fn(handle: *mut ZendFileHandle, filename: *const c_char),
+        pub zend_stream_init_fp: fn(handle: *mut ZendFileHandle, fp: RawFd, filename: *const c_char,),
+        pub zend_stream_init_filename: fn(handle: *mut ZendFileHandle, filename: *const c_char,),
     }
 }

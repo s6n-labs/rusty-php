@@ -7,7 +7,7 @@ pub type PhpStream = c_void; // TODO
 
 php_lib! {
     pub struct Streams<StreamsRaw> {
-        pub _php_stream_open_wrapper_ex: extern "C" fn(
+        pub _php_stream_open_wrapper_ex: fn(
             path: *const c_char,
             mode: *const c_char,
             options: c_int,

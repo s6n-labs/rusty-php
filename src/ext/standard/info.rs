@@ -13,6 +13,6 @@ pub const PHP_INFO_ALL: c_uint = 0xFFFFFFFF;
 
 php_lib! {
     pub struct Info<InfoRaw> {
-        pub php_print_info: extern "C" fn(flags: c_uint),
+        pub php_print_info: fn(flags: c_uint,),
     }
 }

@@ -145,7 +145,7 @@ pub struct ZendLlist {
 
 php_lib! {
     pub struct Zend<ZendRaw> {
-        pub zend_signal_startup: extern "C" fn(),
+        pub zend_signal_startup: fn(),
         {
             pub execute: Execute<ExecuteRaw>,
             pub stream: Stream<StreamRaw>,
