@@ -13,6 +13,7 @@ use clap::{Parser, Subcommand};
 use lazy_static::lazy_static;
 use libc::{gid_t, uid_t};
 use libloading::Library;
+use libloading::os::unix::{RTLD_GLOBAL, RTLD_NOW};
 use tracing::level_filters::LevelFilter;
 use tracing::{debug, error, warn};
 use tracing_subscriber::EnvFilter;
@@ -89,7 +90,13 @@ php_lib! {
 }
 
 fn load_php() -> Result<PhpRaw, Box<dyn Error>> {
+    #[cfg(unix)]
+    let php = unsafe { libloading::os::unix::Library::open(Some("/opt/homebrew/bin/php"),  RTLD_NOW | RTLD_GLOBAL) }?;
+
+    #[cfg(not(unix))]
     let php = unsafe { Library::new("/opt/homebrew/bin/php") }?;
+
+    let php = Library::from(php);
     Ok(Php::load(&php)?.into_raw())
 }
 
