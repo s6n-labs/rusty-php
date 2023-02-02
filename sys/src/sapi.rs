@@ -67,8 +67,8 @@ pub struct SapiModuleStruct {
     pub php_ini_ignore_cwd: c_int,
     pub get_fd: extern "C" fn(fd: *mut c_int) -> c_int,
     pub force_http_10: extern "C" fn() -> c_int,
-    pub get_target_uid: extern "C" fn(*mut uid_t) -> c_int,
-    pub get_target_gid: extern "C" fn(*mut gid_t) -> c_int,
+    pub get_target_uid: extern "C" fn(uid: *mut uid_t) -> c_int,
+    pub get_target_gid: extern "C" fn(gid: *mut gid_t) -> c_int,
     pub input_filter: extern "C" fn(
         arg: c_int,
         var: *const char,

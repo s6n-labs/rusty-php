@@ -317,6 +317,7 @@ dependencies = [
  "libc",
  "libloading",
  "nix",
+ "rusty-php-sys",
  "tracing",
 ]
 
@@ -335,6 +336,16 @@ dependencies = [
 [[package]]
 name = "rusty-php-http"
 version = "0.1.0"
+
+[[package]]
+name = "rusty-php-sys"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "libloading",
+ "nix",
+ "tracing",
+]
 
 [[package]]
 name = "sharded-slab"

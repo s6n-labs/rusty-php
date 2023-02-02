@@ -9,13 +9,13 @@ use std::ptr::null_mut;
 use clap::{Parser, Subcommand};
 use lazy_static::lazy_static;
 use libc::{gid_t, uid_t};
-use rusty_php::sapi::{
+use rusty_php::sys::sapi::{
     SapiHeaderOpEnum, SapiHeaderStruct, SapiHeadersStruct, SapiModuleStruct,
     SAPI_HEADER_SENT_SUCCESSFULLY,
 };
-use rusty_php::zend::stream::ZendFileHandle;
-use rusty_php::zend::{HashTable, ZendResult, ZendResultCode, ZendStat, Zval};
-use rusty_php::Php;
+use rusty_php::sys::zend::stream::ZendFileHandle;
+use rusty_php::sys::zend::{HashTable, ZendResult, ZendResultCode, ZendStat, Zval};
+use rusty_php::sys::Php;
 use tracing::level_filters::LevelFilter;
 use tracing::{debug, error, warn};
 use tracing_subscriber::EnvFilter;
