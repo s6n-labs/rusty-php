@@ -2,9 +2,8 @@ use std::convert::Infallible;
 use std::ffi::{c_int, c_uint};
 use std::ops::{ControlFlow, FromResidual, Try};
 
-use rusty_php_sys::zend::ZendResultCode;
-
 pub use self::Result::{Err, Ok};
+use crate::sys::zend::ZendResultCode;
 
 #[derive(Copy, Clone)]
 pub enum Result<T> {
