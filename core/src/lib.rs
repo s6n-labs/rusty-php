@@ -38,7 +38,7 @@ impl PhpRequest {
     }
 
     pub fn shutdown_all(self) {
-        self.shutdown().shutdown().shutdown()
+        self.shutdown().shutdown_all()
     }
 }
 
