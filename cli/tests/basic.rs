@@ -4,7 +4,7 @@ use std::process::{Command, Output};
 fn test_php_script(contents: &str) -> Result<Output, Box<dyn Error>> {
     Ok(Command::new("cargo")
         .args(&["run", "-q", "--", "eval", contents])
-        .env("RUST_LOG", "warn")
+        .env("RUST_LOG", "error")
         .output()?)
 }
 

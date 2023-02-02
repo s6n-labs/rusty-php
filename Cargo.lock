@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "anyhow"
+version = "1.0.68"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2cb2f989d18dd141ab8ae82f64d1a8cdd37e0840f73a406896cf5e99502fab61"
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -159,6 +165,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "map_in_place"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c59b419989c3a157f724d5bf720468729f1345d4d704cab69b5d7ba58c62c125"
+dependencies = [
+ "scopeguard",
+]
+
+[[package]]
 name = "matchers"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -217,6 +232,16 @@ name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
+
+[[package]]
+name = "pathsearch"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da983bc5e582ab17179c190b4b66c7d76c5943a69c6d34df2a2b6bf8a2977b05"
+dependencies = [
+ "anyhow",
+ "libc",
+]
 
 [[package]]
 name = "pin-project-lite"
@@ -316,7 +341,8 @@ version = "0.1.0"
 dependencies = [
  "libc",
  "libloading",
- "nix",
+ "map_in_place",
+ "pathsearch",
  "rusty-php-sys",
  "tracing",
 ]
@@ -346,6 +372,12 @@ dependencies = [
  "nix",
  "tracing",
 ]
+
+[[package]]
+name = "scopeguard"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "551cc7e5812ffa253138ea53b3de48306005422a66a5f0cc9a5704b3d92b298a"
 
 [[package]]
 name = "sharded-slab"

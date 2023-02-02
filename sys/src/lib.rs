@@ -2,6 +2,7 @@
 
 use std::error::Error;
 use std::ffi::c_void;
+use std::path::Path;
 
 use libloading::os::unix::{RTLD_GLOBAL, RTLD_NOW};
 use libloading::Library;
@@ -85,11 +86,14 @@ php_lib! {
 }
 
 impl Php {
-    pub fn load() -> Result<Self, Box<dyn Error>> {
+    pub fn load<P>(path: P) -> Result<Self, Box<dyn Error>>
+    where
+        P: AsRef<Path>,
+    {
         #[cfg(unix)]
         let php = unsafe {
             libloading::os::unix::Library::open(
-                Some("/opt/homebrew/bin/php"),
+                Some(path.as_ref().as_os_str()),
                 RTLD_NOW | RTLD_GLOBAL,
             )
         }?;
