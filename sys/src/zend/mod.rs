@@ -1,4 +1,5 @@
 use std::ffi::{c_char, c_double, c_uchar, c_void};
+use std::fmt::{Debug, Formatter};
 use std::mem::ManuallyDrop;
 
 use nix::sys::stat::FileStat;
@@ -12,7 +13,7 @@ pub mod execute;
 pub mod stream;
 
 #[repr(C)]
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum ZendResultCode {
     Success = 0,
     Failure = -1,
@@ -38,18 +39,27 @@ pub union ZendRefCountedHTypeInfo {
     pub type_info: u32,
 }
 
+impl Debug for ZendRefCountedHTypeInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unsafe { write!(f, "Union(type_info: {:?})", &self.type_info) }
+    }
+}
+
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendRefCountedH {
     pub ref_count: u32,
     pub u: ZendRefCountedHTypeInfo,
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendRefCounted {
     pub gc: ZendRefCountedH,
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendString {
     pub gc: ZendRefCountedH,
     pub h: ZendUlong,
@@ -58,6 +68,7 @@ pub struct ZendString {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendBucket {
     pub val: Zval,
     pub h: ZendUlong,
@@ -65,6 +76,7 @@ pub struct ZendBucket {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendArray {
     pub gc: ZendRefCounted,
     pub n_table_mask: u32,
@@ -77,6 +89,7 @@ pub struct ZendArray {
 pub type HashTable = ZendArray;
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendValueWw {
     w1: u32,
     w2: u32,
@@ -100,12 +113,27 @@ pub union ZendValue {
     pub ww: ManuallyDrop<ZendValueWw>,
 }
 
+impl Debug for ZendValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unsafe {
+            write!(f, "Union(lval: {:?}, dval: {:?}, counted: {:?}, str: {:?}, arr: {:?}, zv: {:?}, ptr: {:?}, ww: {:?})", &self.lval, &self.dval, &self.counted, &self.str, &self.arr, &self.zv, &self.ptr, &self.ww)
+        }
+    }
+}
+
 #[repr(C)]
 pub union ZvalTypeInfoUnion {
     type_info: u32,
 }
 
+impl Debug for ZvalTypeInfoUnion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unsafe { write!(f, "Union(type_info: {:?})", &self.type_info) }
+    }
+}
+
 #[repr(C)]
+#[derive(Debug)]
 pub struct Zval {
     pub value: ZendValue,
     pub type_info: ZvalTypeInfoUnion,
@@ -115,6 +143,7 @@ pub struct Zval {
 pub type ZendStat = FileStat;
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendFunctionEntry {
     fname: *const c_char,
     // handler: ZifHandler,
@@ -124,6 +153,7 @@ pub struct ZendFunctionEntry {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendLlistElement {
     next: *mut ZendLlistElement,
     prev: *mut ZendLlistElement,
@@ -133,6 +163,7 @@ pub struct ZendLlistElement {
 type LlistDtorFunc = extern "C" fn(*mut c_void);
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendLlist {
     head: *mut ZendLlistElement,
     tail: *mut ZendLlistElement,

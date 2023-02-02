@@ -9,12 +9,14 @@ pub const SAPI_HEADER_DO_SEND: c_int = 2;
 pub const SAPI_HEADER_SEND_FAILED: c_int = 3;
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct SapiHeaderStruct {
     header: *mut c_char,
     header_len: usize,
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct SapiHeadersStruct {
     headers: ZendLlist,
     http_response_code: c_int,
@@ -24,6 +26,7 @@ pub struct SapiHeadersStruct {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
 pub enum SapiHeaderOpEnum {
     SapiHeaderReplace,
@@ -34,6 +37,7 @@ pub enum SapiHeaderOpEnum {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct SapiModuleStruct {
     pub name: *mut c_char,
     pub pretty_name: *mut c_char,

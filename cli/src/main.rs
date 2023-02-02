@@ -12,6 +12,7 @@ use rusty_php::sapi::Sapi;
 use rusty_php::sys::zend::stream::ZendFileHandle;
 use rusty_php::sys::zend::Zval;
 use rusty_php::PhpInit;
+use tracing::debug;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 
@@ -110,6 +111,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 create_cstring(b"Command line begin code").into_raw(),
                 true,
             );
+
+            debug!("EVAL: {:?}", unsafe { retval.assume_init() });
         }
         Action::Execute { filename } => {
             let mut file_handle = MaybeUninit::<ZendFileHandle>::uninit();

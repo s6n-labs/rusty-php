@@ -1,4 +1,5 @@
 use std::ffi::{c_int, c_void};
+use std::fmt::{Debug, Formatter};
 use std::mem::ManuallyDrop;
 use std::os::fd::RawFd;
 
@@ -12,6 +13,7 @@ pub type ZendStreamReader = extern "C" fn(handle: *mut c_void, buf: *mut c_char,
 pub type ZendStreamCloser = extern "C" fn(handle: *mut c_void);
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendStream {
     handle: *mut c_void,
     isatty: c_int,
@@ -26,7 +28,14 @@ pub union ZendFileHandleUnion {
     pub stream: ManuallyDrop<ZendStream>,
 }
 
+impl Debug for ZendFileHandleUnion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unsafe { write!(f, "Union(fp: {:?}, stream: {:?})", &self.fp, &self.stream) }
+    }
+}
+
 #[repr(C)]
+#[derive(Debug)]
 pub struct ZendFileHandle {
     pub handle: ZendFileHandleUnion,
     pub filename: *mut ZendString,
