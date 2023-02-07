@@ -64,12 +64,4 @@ impl TestBed {
 
         unsafe { retval.assume_init() }
     }
-
-    pub fn run_eval(contents: &str) -> Zval {
-        let bed = Self::startup();
-        let value = bed.eval(contents);
-
-        bed.shutdown();
-        value
-    }
 }

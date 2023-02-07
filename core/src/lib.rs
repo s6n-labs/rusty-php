@@ -4,6 +4,7 @@
 mod result;
 
 pub mod callback;
+pub mod ffi;
 pub mod sapi;
 pub mod test;
 pub mod zend;

@@ -42,6 +42,13 @@ pub(crate) const IS_PTR: u32 = 13;
 #[allow(unused)]
 pub(crate) const IS_ALIAS_PTR: u32 = 14;
 
+pub const HASH_FLAG_CONSISTENCY: u32 = (1 << 0) | (1 << 1);
+pub const HASH_FLAG_PACKED: u32 = 1 << 2;
+pub const HASH_FLAG_UNINITIALIZED: u32 = 1 << 3;
+pub const HASH_FLAG_STATIC_KEYS: u32 = 1 << 4; // long and interned strings
+pub const HASH_FLAG_HAS_EMPTY_IND: u32 = 1 << 5;
+pub const HASH_FLAG_ALLOW_COW_VIOLATION: u32 = 1 << 6;
+
 #[repr(C)]
 #[derive(Debug, PartialEq)]
 pub enum ZendResultCode {
@@ -106,11 +113,31 @@ pub struct ZendBucket {
 }
 
 #[repr(C)]
+pub union ZendArrayData {
+    pub ar_hash: *mut u32,
+    pub ar_data: *mut ZendBucket,
+    pub ar_packed: *mut Zval,
+}
+
+impl Debug for ZendArrayData {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unsafe {
+            write!(
+                f,
+                "Union(ar_hash: {:?}, ar_data: {:?}, ar_packed: {:?})",
+                &self.ar_hash, &self.ar_data, &self.ar_packed,
+            )
+        }
+    }
+}
+
+#[repr(C)]
 #[derive(Debug)]
 pub struct ZendArray {
     pub gc: ZendRefCounted,
+    pub flags: u32,
     pub n_table_mask: u32,
-    pub array_data: *mut ZendBucket,
+    pub array_data: ZendArrayData,
     pub n_num_used: u32,
     pub n_num_of_elements: u32,
     pub n_table_size: u32,
