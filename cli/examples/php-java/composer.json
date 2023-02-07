@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php-java/php-java": "dev-master"
+    },
+    "scripts": {
+        "compile": "javac -encoding UTF8 ./HelloWorld.java",
+        "execute": "../../../target/debug/rusty-php-cli execute ./main.php"
+    }
+}
