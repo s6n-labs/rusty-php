@@ -49,13 +49,19 @@ fn eval(contents: &str) -> Zval {
         true,
     );
 
-    unsafe { retval.assume_init() }
+    let value = unsafe { retval.assume_init() };
+
+    php.shutdown_all();
+    value
 }
 
 #[test]
 fn long() {
     let value = Value::from(eval("1234500000 + 67890"));
     assert_eq!(value, Value::Long(1234567890));
+
+    let value = Value::from(eval("\\PHP_INT_MAX"));
+    assert_eq!(value, Value::Long(i64::MAX));
 }
 
 #[test]
