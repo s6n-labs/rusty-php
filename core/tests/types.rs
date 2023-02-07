@@ -1,5 +1,3 @@
-extern crate core;
-
 use rusty_php::test::TestBed;
 use rusty_php::zend::Value;
 
@@ -47,5 +45,23 @@ fn array() {
             ],
             array.into_iter().map(|e| (e.value())).collect::<Vec<_>>(),
         );
+    });
+}
+
+#[test]
+fn function() {
+    TestBed::run(|bed| {
+        let value = bed.eval("function foo(int $a, string $b): void {}");
+        println!("{:?}", value);
+        println!("{:?}", unsafe { &*value.value.func });
+    });
+}
+
+#[test]
+fn object() {
+    TestBed::run(|bed| {
+        let value = bed.eval("new class() {}");
+        println!("{:?}", value);
+        println!("{:?}", unsafe { &*value.value.obj });
     });
 }

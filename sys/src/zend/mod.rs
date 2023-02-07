@@ -2,6 +2,7 @@ use std::ffi::{c_char, c_double, c_uchar, c_void};
 use std::fmt::{Debug, Formatter};
 use std::mem::ManuallyDrop;
 
+use libc::c_int;
 use nix::sys::stat::FileStat;
 
 use crate::php_lib;
@@ -145,6 +146,112 @@ pub struct ZendArray {
 
 pub type HashTable = ZendArray;
 
+pub struct ZendType {
+    ptr: *mut c_void,
+    type_mask: u32,
+}
+
+pub struct ZendArgInfo {
+    name: *mut ZendString,
+    type_: ZendType,
+    default_value: *mut ZendString,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct ZendFunctionCommon {
+    type_: ZendUchar,          // never used
+    arg_flags: [ZendUchar; 3], // bitset of arg_info.pass_by_reference
+    fn_flags: u32,
+    function_name: *mut ZendString,
+    scope: *mut ZendClassEntry,
+    prototype: *mut ZendFunction,
+    num_args: u32,
+    required_num_args: u32,
+    arg_info: *mut ZendArgInfo, // index -1 represents the return value info, if any
+    attributes: *mut HashTable,
+    t: u32, // number of temporary variables
+    run_time_cache: *mut *mut c_void,
+}
+
+#[repr(C)]
+pub union ZendFunction {
+    type_: ZendUchar,
+    quick_arg_flags: u32,
+    common: ManuallyDrop<ZendFunctionCommon>,
+    // op_array: ZendOpArray,
+    // internal_function: ZendInternalFunction,
+}
+
+impl Debug for ZendFunction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unsafe {
+            write!(
+                f,
+                "Union(type: {:?}, quick_arg_flags: {:?}, common: {:?})",
+                &self.type_, &self.quick_arg_flags, &self.common,
+            )
+        }
+    }
+}
+
+#[repr(C)]
+pub union ZendClassEntryParent {
+    parent: *mut ZendClassEntry,
+    parent_name: *mut ZendString,
+}
+
+impl Debug for ZendClassEntryParent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unsafe {
+            write!(
+                f,
+                "Union(parent: {:?}, parent_name: {:?})",
+                &self.parent, &self.parent_name,
+            )
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct ZendClassEntry {
+    type_: c_char,
+    name: *mut ZendString,
+    parent: ZendClassEntryParent,
+    ref_count: c_int,
+    ce_flags: u32,
+    default_properties_count: c_int,
+    default_static_members_count: c_int,
+    default_properties_table: *mut Zval,
+    default_static_members_table: *mut Zval,
+    static_members_table: *mut Zval,
+    function_table: *mut HashTable,
+    properties_info: *mut HashTable,
+    constants_table: *mut HashTable,
+    // mutable_data: *mut ZendClassMutableData,
+    // inheritance_cache: *mut ZendInheritanceCacheEntry,
+    // properties_info_table: *mut *mut ZendPropertyInfo,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct ZendObjectHandlers {
+    offset: c_int,
+    // TODO
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct ZendObject {
+    pub gc: ZendRefCountedH,
+    pub handle: u32, // may be removed ???
+    pub ce: *mut ZendClassEntry,
+    pub handlers: *const ZendObjectHandlers,
+    pub properties: *mut HashTable,
+    pub properties_table: [Zval; 1],
+}
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct ZendValueWw {
@@ -159,21 +266,25 @@ pub union ZendValue {
     pub counted: *mut ZendRefCounted,
     pub str: *mut ZendString,
     pub arr: *mut ZendArray,
-    // pub obj: *mut ZendObject,
+    pub obj: *mut ZendObject,
     // pub res: *mut ZendResource,
     // pub ref_: *mut ZendReference,
     // pub ast: *mut ZendAstRef,
     pub zv: *mut Zval,
     pub ptr: *mut c_void,
-    // pub ce: *mut ZendClassEntry,
-    // pub func: *mut ZendFunction,
+    pub ce: *mut ZendClassEntry,
+    pub func: *mut ZendFunction,
     pub ww: ManuallyDrop<ZendValueWw>,
 }
 
 impl Debug for ZendValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         unsafe {
-            write!(f, "Union(lval: {:?}, dval: {:?}, counted: {:?}, str: {:?}, arr: {:?}, zv: {:?}, ptr: {:?}, ww: {:?})", &self.lval, &self.dval, &self.counted, &self.str, &self.arr, &self.zv, &self.ptr, &self.ww)
+            write!(
+                f,
+                "Union(lval: {:?}, dval: {:?}, counted: {:?}, str: {:?}, arr: {:?}, obj: {:?}, zv: {:?}, ptr: {:?}, ce: {:?}, func: {:?}, ww: {:?})",
+                &self.lval, &self.dval, &self.counted, &self.str, &self.arr, &self.obj, &self.zv, &self.ptr, &self.ce, &self.func, &self.ww,
+            )
         }
     }
 }
