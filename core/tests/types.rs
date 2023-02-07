@@ -11,25 +11,34 @@ fn long() {
 
     let value = Value::from(bed.eval("\\PHP_INT_MAX"));
     assert_eq!(value, Value::Long(i64::MAX));
+
+    bed.shutdown();
 }
 
 #[test]
 fn double() {
     let bed = TestBed::startup();
+
     let value = Value::from(bed.eval("1.234 + 5.678"));
     assert_eq!(value, Value::Double(6.912));
+
+    bed.shutdown();
 }
 
 #[test]
 fn string() {
     let bed = TestBed::startup();
+
     let value = Value::from(bed.eval("'Hello, world!'"));
     assert_eq!(value, Value::String("Hello, world!".into()));
+
+    bed.shutdown();
 }
 
 #[test]
 fn array() {
     let bed = TestBed::startup();
+
     let value = Value::from(bed.eval("[123, 4.56, 'Hello']"));
     let array = match value {
         Value::Array(a) => a,
@@ -43,5 +52,7 @@ fn array() {
             Value::String("Hello".into()),
         ],
         array.into_iter().map(|e| (e.value())).collect::<Vec<_>>(),
-    )
+    );
+
+    bed.shutdown();
 }
