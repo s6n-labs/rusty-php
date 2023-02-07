@@ -4,6 +4,6 @@
     },
     "scripts": {
         "compile": "javac -encoding UTF8 ./HelloWorld.java",
-        "execute": "../../../target/debug/rusty-php-cli execute ./main.php"
+        "execute": "RUST_LOG=error cargo run execute ./main.php"
     }
 }
