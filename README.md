@@ -11,5 +11,5 @@ PHP SAPI implementation in Rust.
 
 ## Getting Started
 ```shell
-cargo run -- eval 'phpinfo();'
+cargo run --bin rusty-php-cli -- eval 'phpinfo();'
 ```
