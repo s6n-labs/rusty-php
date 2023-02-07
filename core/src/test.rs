@@ -64,4 +64,14 @@ impl TestBed {
 
         unsafe { retval.assume_init() }
     }
+
+    pub fn run<F, R>(f: F) -> R
+    where
+        F: FnOnce(&TestBed) -> R,
+    {
+        let bed = Self::startup();
+        let ret = f(&bed);
+        bed.shutdown();
+        ret
+    }
 }
