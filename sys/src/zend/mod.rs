@@ -12,6 +12,36 @@ use crate::zend::stream::{Stream, StreamRaw};
 pub mod execute;
 pub mod stream;
 
+pub const IS_UNDEF: u32 = 0;
+pub const IS_NULL: u32 = 1;
+pub const IS_FALSE: u32 = 2;
+pub const IS_TRUE: u32 = 3;
+pub const IS_LONG: u32 = 4;
+pub const IS_DOUBLE: u32 = 5;
+pub const IS_STRING: u32 = 6;
+pub const IS_ARRAY: u32 = 7;
+pub const IS_OBJECT: u32 = 8;
+pub const IS_RESOURCE: u32 = 9;
+pub const IS_REFERENCE: u32 = 10;
+pub const IS_CONSTANT_AST: u32 = 11; // Constant expressions
+
+// Fake types used only for type hinting.
+// These are allowed to overlap with the types below.
+pub const IS_CALLABLE: u32 = 12;
+pub const IS_ITERABLE: u32 = 13;
+pub const IS_VOID: u32 = 14;
+pub const IS_STATIC: u32 = 15;
+pub const IS_MIXED: u32 = 16;
+pub const IS_NEVER: u32 = 17;
+
+// Internal types
+#[allow(unused)]
+pub(crate) const IS_INDIRECT: u32 = 12;
+#[allow(unused)]
+pub(crate) const IS_PTR: u32 = 13;
+#[allow(unused)]
+pub(crate) const IS_ALIAS_PTR: u32 = 14;
+
 #[repr(C)]
 #[derive(Debug, PartialEq)]
 pub enum ZendResultCode {
@@ -64,7 +94,7 @@ pub struct ZendString {
     pub gc: ZendRefCountedH,
     pub h: ZendUlong,
     pub len: usize,
-    pub val: *mut [c_char; 1],
+    pub val: [c_char; 1],
 }
 
 #[repr(C)]
@@ -109,7 +139,7 @@ pub union ZendValue {
     pub zv: *mut Zval,
     pub ptr: *mut c_void,
     // pub ce: *mut ZendClassEntry,
-    // pub func: *mut ZendFuntion,
+    // pub func: *mut ZendFunction,
     pub ww: ManuallyDrop<ZendValueWw>,
 }
 
@@ -123,7 +153,7 @@ impl Debug for ZendValue {
 
 #[repr(C)]
 pub union ZvalTypeInfoUnion {
-    type_info: u32,
+    pub type_info: u32,
 }
 
 impl Debug for ZvalTypeInfoUnion {

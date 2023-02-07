@@ -5,6 +5,7 @@ mod result;
 
 pub mod callback;
 pub mod sapi;
+pub mod zend;
 
 use std::error::Error;
 use std::path::{Path, PathBuf};

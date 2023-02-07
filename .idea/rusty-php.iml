@@ -8,6 +8,8 @@
       <sourceFolder url="file://$MODULE_DIR$/derive/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/http/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sys/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/cli/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/core/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
