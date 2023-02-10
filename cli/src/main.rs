@@ -69,12 +69,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .with_writer(stderr)
         .init();
 
-    let php = PhpInit::new(SapiImpl)
-        .init()?
-        .startup_module()
-        .unwrap()
-        .startup_request()
-        .unwrap();
+    let php = PhpInit::new(SapiImpl).init()?.startup_module().unwrap();
+    let request = php.startup_request().unwrap();
 
     php.as_ref().streams._php_stream_open_wrapper_ex(
         create_cstring(b"php://stdin").into_raw(),
@@ -105,7 +101,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Action::Eval { script } => {
             let mut retval = MaybeUninit::<Zval>::uninit();
 
-            php.as_ref().zend.execute.zend_eval_string_ex(
+            request.as_ref().zend.execute.zend_eval_string_ex(
                 create_cstring(script.as_bytes()).into_raw(),
                 retval.as_mut_ptr(),
                 create_cstring(b"Command line begin code").into_raw(),
@@ -117,7 +113,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Action::Execute { filename } => {
             let mut file_handle = MaybeUninit::<ZendFileHandle>::uninit();
 
-            php.as_ref().zend.stream.zend_stream_init_filename(
+            request.as_ref().zend.stream.zend_stream_init_filename(
                 file_handle.as_mut_ptr(),
                 create_cstring(filename.as_bytes()).into_raw(),
             );
@@ -125,10 +121,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             let mut file_handle = unsafe { file_handle.assume_init() };
             file_handle.primary_script = true;
 
-            php.as_ref().php_execute_script(&mut file_handle);
+            request.as_ref().php_execute_script(&mut file_handle);
         }
     };
 
+    request.shutdown();
     php.shutdown_all();
 
     Ok(())

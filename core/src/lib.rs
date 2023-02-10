@@ -23,29 +23,23 @@ use crate::sapi::{Sapi, SapiExt};
 use crate::sys::sapi::SapiModuleStruct;
 use crate::sys::Php as PhpInner;
 
-pub struct PhpRequest {
-    inner: PhpModule,
+pub struct PhpRequest<'r> {
+    inner: &'r PhpModule,
 }
 
-impl PhpRequest {
-    fn startup(inner: PhpModule) -> Result<Self> {
+impl<'r> PhpRequest<'r> {
+    fn startup(inner: &'r PhpModule) -> Result<Self> {
         Result::from(inner.as_ref().php_request_startup())?;
 
         Ok(Self { inner })
     }
 
-    #[must_use]
-    pub fn shutdown(self) -> PhpModule {
+    pub fn shutdown(self) {
         self.inner.as_ref().php_request_shutdown(null_mut());
-        self.inner
-    }
-
-    pub fn shutdown_all(self) {
-        self.shutdown().shutdown_all()
     }
 }
 
-impl AsRef<PhpInner> for PhpRequest {
+impl<'r> AsRef<PhpInner> for PhpRequest<'r> {
     #[inline]
     fn as_ref(&self) -> &PhpInner {
         self.inner.as_ref()
@@ -67,7 +61,7 @@ impl PhpModule {
     }
 
     #[must_use]
-    pub fn startup_request(self) -> Result<PhpRequest> {
+    pub fn startup_request(&self) -> Result<PhpRequest> {
         PhpRequest::startup(self)
     }
 
