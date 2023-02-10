@@ -5,6 +5,7 @@ mod result;
 
 pub mod callback;
 pub mod ffi;
+mod pool;
 pub mod sapi;
 pub mod test;
 pub mod zend;
@@ -13,7 +14,6 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::ptr::null_mut;
 use std::result::Result as StdResult;
-use std::sync::Arc;
 
 use pathsearch::find_executable_in_path;
 pub use rusty_php_sys as sys;
@@ -22,6 +22,19 @@ pub use crate::result::{Err, Ok, Result};
 use crate::sapi::{Sapi, SapiExt};
 use crate::sys::sapi::SapiModuleStruct;
 use crate::sys::Php as PhpInner;
+
+static mut GLOBAL_PHP: Option<PhpInner> = None;
+
+pub(crate) fn register_global_php(php: PhpInner) -> &'static PhpInner {
+    unsafe {
+        GLOBAL_PHP = Some(php);
+        GLOBAL_PHP.as_ref().unwrap()
+    }
+}
+
+pub fn php() -> Option<&'static PhpInner> {
+    unsafe { GLOBAL_PHP.as_ref() }
+}
 
 pub struct PhpRequest {
     inner: PhpModule,
@@ -41,7 +54,7 @@ impl PhpRequest {
     }
 
     pub fn shutdown_all(self) {
-        self.shutdown().shutdown_all()
+        self.shutdown().shutdown_all();
     }
 }
 
@@ -58,10 +71,11 @@ pub struct PhpModule {
 
 impl PhpModule {
     fn startup(inner: Php) -> Result<Self> {
-        Result::<()>::from(inner.as_ref().php_module_startup(
-            Arc::into_raw(Arc::clone(&inner.sapi_module)) as *mut SapiModuleStruct,
-            null_mut(),
-        ))?;
+        Result::<()>::from(
+            inner
+                .as_ref()
+                .php_module_startup(inner.sapi_module, null_mut()),
+        )?;
 
         Ok(Self { inner })
     }
@@ -78,7 +92,7 @@ impl PhpModule {
     }
 
     pub fn shutdown_all(self) {
-        self.shutdown().shutdown()
+        self.shutdown().shutdown();
     }
 }
 
@@ -90,22 +104,22 @@ impl AsRef<PhpInner> for PhpModule {
 }
 
 pub struct Php {
-    inner: PhpInner,
-    sapi_module: Arc<SapiModuleStruct>,
+    inner: &'static PhpInner,
+    sapi_module: *mut SapiModuleStruct,
 }
 
 impl Php {
-    fn startup<P, S>(path: P, sapi: S) -> StdResult<Self, Box<dyn Error>>
+    fn startup<P, S>(path: P, sapi: &S) -> StdResult<Self, Box<dyn Error>>
     where
         P: AsRef<Path>,
-        S: SapiExt,
+        S: Sapi + SapiExt,
     {
         sapi.register();
 
-        let sapi_module = Arc::new(sapi.into_raw());
-        let php = PhpInner::load(path)?;
+        let php = register_global_php(PhpInner::load(path)?);
+        let sapi_module = Box::leak(Box::new(sapi.to_raw()));
 
-        php.sapi_startup(Arc::into_raw(Arc::clone(&sapi_module)) as *mut SapiModuleStruct);
+        php.sapi_startup(sapi_module);
 
         StdResult::Ok(Self {
             inner: php,
@@ -121,32 +135,28 @@ impl Php {
     pub fn shutdown(self) {
         self.as_ref().sapi_shutdown();
     }
-
-    pub fn into_inner(self) -> PhpInner {
-        self.inner
-    }
 }
 
 impl AsRef<PhpInner> for Php {
     #[inline]
     fn as_ref(&self) -> &PhpInner {
-        &self.inner
+        self.inner
     }
 }
 
-pub struct PhpInit<S>
+pub struct PhpInit<'s, S>
 where
     S: Sapi,
 {
-    sapi: S,
+    sapi: &'s S,
     path: Option<PathBuf>,
 }
 
-impl<S> PhpInit<S>
+impl<'s, S> PhpInit<'s, S>
 where
     S: Sapi,
 {
-    pub fn new(sapi: S) -> Self {
+    pub fn new(sapi: &'s S) -> Self {
         Self { sapi, path: None }
     }
 

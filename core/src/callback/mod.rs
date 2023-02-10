@@ -93,7 +93,7 @@ pub trait SapiCallback {
         Ok(())
     }
 
-    fn on_send_headers(&self, headers: &SapiHeadersStruct) -> c_int {
+    fn on_send_headers(&self, headers: &mut SapiHeadersStruct) -> c_int {
         // TODO: Enum type
         no_op!();
         SAPI_HEADER_SENT_SUCCESSFULLY
@@ -179,17 +179,18 @@ pub trait SapiCallback {
     }
 }
 
+#[derive(Clone)]
 pub struct Callback {
     listener: Arc<dyn SapiCallback>,
 }
 
 impl Callback {
-    pub fn new<S>(listener: S) -> Self
+    pub fn new<S>(listener: Arc<S>) -> Self
     where
         S: SapiCallback + 'static,
     {
         Self {
-            listener: Arc::new(listener),
+            listener: listener as Arc<dyn SapiCallback>,
         }
     }
 }

@@ -87,7 +87,7 @@ pub(crate) extern "C" fn on_header_handler(
 
 pub(crate) extern "C" fn on_send_headers(sapi_headers: *mut SapiHeadersStruct) -> c_int {
     debug!("CALLBACK: on_send_headers");
-    callback().on_send_headers(unsafe { &*sapi_headers })
+    callback().on_send_headers(unsafe { &mut *sapi_headers })
 }
 
 pub(crate) extern "C" fn on_send_header(
@@ -100,8 +100,9 @@ pub(crate) extern "C" fn on_send_header(
 
 pub(crate) extern "C" fn on_read_post(buffer: *mut c_char, count_bytes: usize) -> usize {
     debug!("CALLBACK: on_read_post");
-    let mut buffer = unsafe { CString::from_raw(buffer) }.into_bytes();
-    callback().on_read_post(&mut buffer[..count_bytes])
+    // let mut buffer = unsafe { CString::from_raw(buffer) }.into_bytes();
+    // callback().on_read_post(&mut buffer[..count_bytes])
+    0
 }
 
 pub(crate) extern "C" fn on_read_cookies() -> *mut c_char {

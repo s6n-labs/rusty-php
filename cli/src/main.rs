@@ -5,6 +5,7 @@ use std::ffi::CString;
 use std::io::stderr;
 use std::mem::MaybeUninit;
 use std::ptr::null_mut;
+use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use rusty_php::callback::{Callback, SapiCallback};
@@ -40,7 +41,7 @@ impl Sapi for SapiImpl {
     }
 
     fn callback(&self) -> Callback {
-        Callback::new(SapiCallbackImpl)
+        Callback::new(Arc::new(SapiCallbackImpl))
     }
 }
 
@@ -69,7 +70,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .with_writer(stderr)
         .init();
 
-    let php = PhpInit::new(SapiImpl)
+    let sapi = SapiImpl;
+    let php = PhpInit::new(&sapi)
         .init()?
         .startup_module()
         .unwrap()

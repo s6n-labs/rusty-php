@@ -11,18 +11,18 @@ pub const SAPI_HEADER_SEND_FAILED: c_int = 3;
 #[repr(C)]
 #[derive(Debug)]
 pub struct SapiHeaderStruct {
-    header: *mut c_char,
-    header_len: usize,
+    pub header: *mut c_char,
+    pub header_len: usize,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 pub struct SapiHeadersStruct {
-    headers: ZendLlist,
-    http_response_code: c_int,
-    send_default_content_type: c_uchar,
-    mimetype: *mut char,
-    http_status_line: *mut char,
+    pub headers: ZendLlist,
+    pub http_response_code: c_int,
+    pub send_default_content_type: c_uchar,
+    pub mimetype: *mut c_char,
+    pub http_status_line: *mut c_char,
 }
 
 #[repr(C)]
@@ -48,20 +48,22 @@ pub struct SapiModuleStruct {
     pub ub_write: extern "C" fn(str: *const c_char, str_length: usize) -> usize,
     pub flush: extern "C" fn(server_context: *mut c_void),
     pub get_stat: extern "C" fn() -> *mut ZendStat,
-    pub getenv: extern "C" fn(name: *const c_char, name_len: usize) -> *mut c_char,
+    pub getenv: Option<extern "C" fn(name: *const c_char, name_len: usize) -> *mut c_char>,
     pub sapi_error: unsafe extern "C" fn(ty: c_int, error_msg: *const c_char, ...),
-    pub header_handler: extern "C" fn(
-        sapi_handler: *mut SapiHeaderStruct,
-        op: SapiHeaderOpEnum,
-        sapi_headers: *mut SapiHeadersStruct,
-    ) -> c_int,
+    pub header_handler: Option<
+        extern "C" fn(
+            sapi_handler: *mut SapiHeaderStruct,
+            op: SapiHeaderOpEnum,
+            sapi_headers: *mut SapiHeadersStruct,
+        ) -> c_int,
+    >,
     pub send_headers: extern "C" fn(sapi_headers: *mut SapiHeadersStruct) -> c_int,
     pub send_header: extern "C" fn(sapi_header: *mut SapiHeaderStruct, server_context: *mut c_void),
     pub read_post: extern "C" fn(buffer: *mut c_char, count_bytes: usize) -> usize,
     pub read_cookies: extern "C" fn() -> *mut c_char,
     pub register_server_variables: extern "C" fn(track_vars_array: *mut Zval),
     pub log_message: extern "C" fn(message: *const c_char, syslog_type_int: c_int),
-    pub get_request_time: extern "C" fn(request_time: *mut c_double) -> ZendResult,
+    pub get_request_time: Option<extern "C" fn(request_time: *mut c_double) -> ZendResult>,
     pub terminate_process: extern "C" fn(),
     pub php_ini_path_override: *mut c_char,
     pub default_post_reader: extern "C" fn(),
@@ -86,3 +88,6 @@ pub struct SapiModuleStruct {
     pub additional_functions: *const ZendFunctionEntry,
     pub input_filter_init: extern "C" fn() -> c_uint,
 }
+
+unsafe impl Send for SapiModuleStruct {}
+unsafe impl Sync for SapiModuleStruct {}

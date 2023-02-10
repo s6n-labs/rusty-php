@@ -202,19 +202,19 @@ pub type ZendStat = FileStat;
 #[repr(C)]
 #[derive(Debug)]
 pub struct ZendFunctionEntry {
-    fname: *const c_char,
+    pub fname: *const c_char,
     // handler: ZifHandler,
     // arg_info: *const ZendInternalArgInfo,
-    num_args: u32,
-    flags: u32,
+    pub num_args: u32,
+    pub flags: u32,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 pub struct ZendLlistElement {
-    next: *mut ZendLlistElement,
-    prev: *mut ZendLlistElement,
-    data: *mut c_void,
+    pub next: *mut ZendLlistElement,
+    pub prev: *mut ZendLlistElement,
+    pub data: [c_char; 1],
 }
 
 type LlistDtorFunc = extern "C" fn(*mut c_void);
@@ -222,18 +222,20 @@ type LlistDtorFunc = extern "C" fn(*mut c_void);
 #[repr(C)]
 #[derive(Debug)]
 pub struct ZendLlist {
-    head: *mut ZendLlistElement,
-    tail: *mut ZendLlistElement,
-    count: usize,
-    size: usize,
-    dtor: LlistDtorFunc,
-    persistent: c_uchar,
-    traverse_ptr: *mut ZendLlistElement,
+    pub head: *mut ZendLlistElement,
+    pub tail: *mut ZendLlistElement,
+    pub count: usize,
+    pub size: usize,
+    pub dtor: LlistDtorFunc,
+    pub persistent: c_uchar,
+    pub traverse_ptr: *mut ZendLlistElement,
 }
 
 php_lib! {
     pub struct Zend<ZendRaw> {
         pub zend_signal_startup: fn(),
+        pub zend_llist_get_first_ex: fn(l: *mut ZendLlist, pos: *mut ZendLlistElement,) -> *mut c_void,
+        pub zend_llist_get_next_ex: fn(l: *mut ZendLlist, pos: *mut ZendLlistElement,) -> *mut c_void,
         {
             pub execute: Execute<ExecuteRaw>,
             pub stream: Stream<StreamRaw>,

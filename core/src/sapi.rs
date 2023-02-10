@@ -16,9 +16,9 @@ pub trait Sapi {
     fn callback(&self) -> Callback;
 }
 
-pub(crate) trait SapiExt {
+pub trait SapiExt {
     fn register(&self);
-    fn into_raw(self) -> SapiModuleStruct;
+    fn to_raw(&self) -> SapiModuleStruct;
 }
 
 impl<T> SapiExt for T
@@ -29,7 +29,7 @@ where
         register_global_callback(self.callback());
     }
 
-    fn into_raw(self) -> SapiModuleStruct {
+    fn to_raw(&self) -> SapiModuleStruct {
         SapiModuleStruct {
             name: create_cstring(self.name()).into_raw(),
             pretty_name: create_cstring(self.pretty_name()).into_raw(),
@@ -40,16 +40,16 @@ where
             ub_write: on_ub_write,
             flush: on_flush,
             get_stat: on_get_stat,
-            getenv: on_getenv,
+            getenv: None,
             sapi_error: on_sapi_error,
-            header_handler: on_header_handler,
+            header_handler: None,
             send_headers: on_send_headers,
             send_header: on_send_header,
             read_post: on_read_post,
             read_cookies: on_read_cookies,
             register_server_variables: on_register_server_variables,
             log_message: on_log_message,
-            get_request_time: on_get_request_time,
+            get_request_time: None,
             terminate_process: on_terminate_process,
             php_ini_path_override: null_mut(),
             default_post_reader: on_default_post_reader,
