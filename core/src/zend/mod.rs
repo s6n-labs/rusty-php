@@ -1,6 +1,7 @@
 //! High-level API for reading and writing Zend values.
 
 pub mod array;
+pub mod llist;
 pub mod string;
 
 use rusty_php_sys::zend::{Zval, IS_ARRAY, IS_DOUBLE, IS_LONG, IS_STRING};

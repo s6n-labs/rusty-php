@@ -11,18 +11,18 @@ pub const SAPI_HEADER_SEND_FAILED: c_int = 3;
 #[repr(C)]
 #[derive(Debug)]
 pub struct SapiHeaderStruct {
-    header: *mut c_char,
-    header_len: usize,
+    pub header: *mut c_char,
+    pub header_len: usize,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 pub struct SapiHeadersStruct {
-    headers: ZendLlist,
-    http_response_code: c_int,
-    send_default_content_type: c_uchar,
-    mimetype: *mut char,
-    http_status_line: *mut char,
+    pub headers: ZendLlist,
+    pub http_response_code: c_int,
+    pub send_default_content_type: c_uchar,
+    pub mimetype: *mut char,
+    pub http_status_line: *mut char,
 }
 
 #[repr(C)]
