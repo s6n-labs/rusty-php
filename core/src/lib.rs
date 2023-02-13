@@ -10,6 +10,8 @@ pub mod test;
 pub mod zend;
 
 use std::error::Error;
+use std::ffi::CString;
+use std::mem::MaybeUninit;
 use std::path::{Path, PathBuf};
 use std::ptr::null_mut;
 use std::result::Result as StdResult;
@@ -21,7 +23,9 @@ pub use rusty_php_sys as sys;
 pub use crate::result::{Err, Ok, Result};
 use crate::sapi::{Sapi, SapiExt};
 use crate::sys::sapi::SapiModuleStruct;
+use crate::sys::zend::stream::ZendFileHandle;
 use crate::sys::Php as PhpInner;
+use crate::zend::file::ZFileHandle;
 
 pub struct PhpRequest<'r> {
     inner: &'r PhpModule,
@@ -34,7 +38,14 @@ impl<'r> PhpRequest<'r> {
         Ok(Self { inner })
     }
 
-    pub fn shutdown(self) {
+    pub fn execute_script<'a>(&self, script: &'a mut ZFileHandle<'a>) {
+        self.as_ref()
+            .php_execute_script(<&mut ZendFileHandle>::from(script) as *mut ZendFileHandle);
+    }
+}
+
+impl<'r> Drop for PhpRequest<'r> {
+    fn drop(&mut self) {
         self.inner.as_ref().php_request_shutdown(null_mut());
     }
 }
@@ -65,14 +76,27 @@ impl PhpModule {
         PhpRequest::startup(self)
     }
 
-    #[must_use]
-    pub fn shutdown(self) -> Php {
-        self.inner.as_ref().php_module_shutdown();
-        self.inner
-    }
+    pub fn init_stream_path<P>(&self, path: P) -> ZFileHandle
+    where
+        P: AsRef<Path>,
+    {
+        let mut file_handle = MaybeUninit::<ZendFileHandle>::uninit();
 
-    pub fn shutdown_all(self) {
-        self.shutdown().shutdown()
+        self.as_ref().zend.stream.zend_stream_init_filename(
+            file_handle.as_mut_ptr(),
+            unsafe {
+                CString::from_vec_unchecked(path.as_ref().to_string_lossy().as_bytes().to_vec())
+            }
+            .into_raw(),
+        );
+
+        unsafe { file_handle.assume_init() }.into()
+    }
+}
+
+impl Drop for PhpModule {
+    fn drop(&mut self) {
+        self.inner.as_ref().php_module_shutdown();
     }
 }
 
@@ -111,13 +135,11 @@ impl Php {
     pub fn startup_module(self) -> Result<PhpModule> {
         PhpModule::startup(self)
     }
+}
 
-    pub fn shutdown(self) {
+impl Drop for Php {
+    fn drop(&mut self) {
         self.as_ref().sapi_shutdown();
-    }
-
-    pub fn into_inner(self) -> PhpInner {
-        self.inner
     }
 }
 

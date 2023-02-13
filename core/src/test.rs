@@ -33,17 +33,16 @@ impl Sapi for SapiImpl {
 
 pub struct TestBedRequest<'r> {
     bed: &'r TestBed,
-    request: PhpRequest<'r>,
+    _request: PhpRequest<'r>,
 }
 
 impl<'r> TestBedRequest<'r> {
     pub fn startup(bed: &'r TestBed) -> Self {
         let request = bed.php.startup_request().unwrap();
-        Self { bed, request }
-    }
-
-    pub fn shutdown(self) {
-        self.request.shutdown();
+        Self {
+            bed,
+            _request: request,
+        }
     }
 
     pub fn eval(&self, contents: &str) -> Zval {
@@ -79,19 +78,12 @@ impl TestBed {
         TestBedRequest::startup(self)
     }
 
-    pub fn shutdown(self) {
-        self.php.shutdown_all();
-    }
-
     pub fn run<F, R>(f: F) -> R
     where
         F: FnOnce(&TestBedRequest) -> R,
     {
         let bed = Self::init();
         let request = bed.startup();
-        let ret = f(&request);
-        request.shutdown();
-        bed.shutdown();
-        ret
+        f(&request)
     }
 }

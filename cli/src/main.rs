@@ -125,8 +125,5 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    request.shutdown();
-    php.shutdown_all();
-
     Ok(())
 }

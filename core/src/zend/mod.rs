@@ -1,6 +1,7 @@
 //! High-level API for reading and writing Zend values.
 
 pub mod array;
+pub mod file;
 pub mod llist;
 pub mod string;
 
