@@ -100,8 +100,8 @@ pub(crate) extern "C" fn on_send_header(
 
 pub(crate) extern "C" fn on_read_post(buffer: *mut c_char, count_bytes: usize) -> usize {
     debug!("CALLBACK: on_read_post");
-    let mut buffer = unsafe { CString::from_raw(buffer) }.into_bytes();
-    callback().on_read_post(&mut buffer[..count_bytes])
+    callback()
+        .on_read_post(unsafe { std::slice::from_raw_parts_mut(buffer as *mut u8, count_bytes) })
 }
 
 pub(crate) extern "C" fn on_read_cookies() -> *mut c_char {
