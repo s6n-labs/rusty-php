@@ -27,8 +27,8 @@ where
                     .build()
                     .unwrap()
                     .block_on(async move {
-                        loop {
-                            f(rx.recv().unwrap()).await
+                        while let Ok(c) = rx.recv() {
+                            f(c).await
                         }
                     })
             }),

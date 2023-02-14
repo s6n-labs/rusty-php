@@ -50,13 +50,16 @@ pub struct SapiModuleStruct {
     pub get_stat: extern "C" fn() -> *mut ZendStat,
     pub getenv: extern "C" fn(name: *const c_char, name_len: usize) -> *mut c_char,
     pub sapi_error: unsafe extern "C" fn(ty: c_int, error_msg: *const c_char, ...),
-    pub header_handler: extern "C" fn(
-        sapi_handler: *mut SapiHeaderStruct,
-        op: SapiHeaderOpEnum,
-        sapi_headers: *mut SapiHeadersStruct,
-    ) -> c_int,
+    pub header_handler: Option<
+        extern "C" fn(
+            sapi_handler: *mut SapiHeaderStruct,
+            op: SapiHeaderOpEnum,
+            sapi_headers: *mut SapiHeadersStruct,
+        ) -> c_int,
+    >,
     pub send_headers: extern "C" fn(sapi_headers: *mut SapiHeadersStruct) -> c_int,
-    pub send_header: extern "C" fn(sapi_header: *mut SapiHeaderStruct, server_context: *mut c_void),
+    pub send_header:
+        Option<extern "C" fn(sapi_header: *mut SapiHeaderStruct, server_context: *mut c_void)>,
     pub read_post: extern "C" fn(buffer: *mut c_char, count_bytes: usize) -> usize,
     pub read_cookies: extern "C" fn() -> *mut c_char,
     pub register_server_variables: extern "C" fn(track_vars_array: *mut Zval),

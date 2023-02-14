@@ -10,12 +10,14 @@ use libloading::Library;
 use crate::ext::{Extensions, ExtensionsRaw};
 use crate::sapi::SapiModuleStruct;
 use crate::streams::{Streams, StreamsRaw};
+use crate::variables::{Variables, VariablesRaw};
 use crate::zend::stream::ZendFileHandle;
 use crate::zend::{Zend, ZendRaw, ZendResult};
 
 pub mod ext;
 pub mod sapi;
 pub mod streams;
+pub mod variables;
 pub mod zend;
 
 #[macro_export]
@@ -80,6 +82,7 @@ php_lib! {
         {
             pub ext: Extensions<ExtensionsRaw>,
             pub streams: Streams<StreamsRaw>,
+            pub variables: Variables<VariablesRaw>,
             pub zend: Zend<ZendRaw>,
         }
     }
