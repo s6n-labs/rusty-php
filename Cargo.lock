@@ -348,6 +348,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusty-php-build"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
 name = "rusty-php-cli"
 version = "0.1.0"
 dependencies = [
@@ -355,6 +362,8 @@ dependencies = [
  "lazy_static",
  "libc",
  "rusty-php",
+ "rusty-php-build",
+ "rusty-php-sys",
  "tracing",
  "tracing-subscriber",
 ]
