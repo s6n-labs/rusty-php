@@ -1,6 +1,7 @@
 use std::ffi::CString;
 use std::mem::MaybeUninit;
 
+use rusty_php_sys::zend::execute::zend_eval_string_ex;
 use rusty_php_sys::zend::Zval;
 
 use crate::callback::{Callback, SapiCallback};
@@ -55,12 +56,14 @@ impl TestBed {
     pub fn eval(&self, contents: &str) -> Zval {
         let mut retval = MaybeUninit::<Zval>::uninit();
 
-        self.php.as_ref().zend.execute.zend_eval_string_ex(
-            unsafe { CString::from_vec_unchecked(contents.as_bytes().to_vec()) }.into_raw(),
-            retval.as_mut_ptr(),
-            unsafe { CString::from_vec_unchecked(b"TestBed".to_vec()) }.into_raw(),
-            true,
-        );
+        unsafe {
+            zend_eval_string_ex(
+                CString::from_vec_unchecked(contents.as_bytes().to_vec()).into_raw(),
+                retval.as_mut_ptr(),
+                CString::from_vec_unchecked(b"TestBed".to_vec()).into_raw(),
+                true,
+            );
+        }
 
         unsafe { retval.assume_init() }
     }

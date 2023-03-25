@@ -4,10 +4,7 @@ use std::mem::ManuallyDrop;
 
 use nix::sys::stat::FileStat;
 
-use crate::php_lib;
-use crate::zend::execute::{Execute, ExecuteRaw};
 use crate::zend::long::{ZendLong, ZendUlong};
-use crate::zend::stream::{Stream, StreamRaw};
 
 pub mod execute;
 pub mod stream;
@@ -231,12 +228,6 @@ pub struct ZendLlist {
     traverse_ptr: *mut ZendLlistElement,
 }
 
-php_lib! {
-    pub struct Zend<ZendRaw> {
-        pub zend_signal_startup: fn(),
-        {
-            pub execute: Execute<ExecuteRaw>,
-            pub stream: Stream<StreamRaw>,
-        }
-    }
+extern "C" {
+    pub fn zend_signal_startup();
 }
