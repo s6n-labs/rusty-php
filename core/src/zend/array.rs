@@ -79,6 +79,10 @@ impl<'a> ZArray<'a> {
         self.raw.n_num_of_elements as usize
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn is_packed(&self) -> bool {
         self.raw.flags & HASH_FLAG_PACKED != 0
     }

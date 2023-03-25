@@ -5,7 +5,6 @@ use std::os::fd::RawFd;
 
 use libc::c_char;
 
-use crate::php_lib;
 use crate::zend::{ZendString, ZendUchar};
 
 pub type ZendStreamFsizer = extern "C" fn(handle: *mut c_void);
@@ -47,9 +46,7 @@ pub struct ZendFileHandle {
     pub len: usize,
 }
 
-php_lib! {
-    pub struct Stream<StreamRaw> {
-        pub zend_stream_init_fp: fn(handle: *mut ZendFileHandle, fp: RawFd, filename: *const c_char,),
-        pub zend_stream_init_filename: fn(handle: *mut ZendFileHandle, filename: *const c_char,),
-    }
+extern "C" {
+    pub fn zend_stream_init_fp(handle: *mut ZendFileHandle, fp: RawFd, filename: *const c_char);
+    pub fn zend_stream_init_filename(handle: *mut ZendFileHandle, filename: *const c_char);
 }

@@ -16,7 +16,7 @@ pub trait Sapi {
     fn callback(&self) -> Callback;
 }
 
-pub(crate) trait SapiExt {
+pub trait SapiExt {
     fn register(&self);
     fn into_raw(self) -> SapiModuleStruct;
 }

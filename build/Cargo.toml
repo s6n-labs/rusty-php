@@ -1,13 +1,9 @@
 [package]
-name = "rusty-php"
+name = "rusty-php-build"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libc = "0.2.138"
-map_in_place = "0.1.0"
-tracing = "0.1.37"
-
-rusty-php-sys = { path = "../sys" }
+anyhow = "1.0"

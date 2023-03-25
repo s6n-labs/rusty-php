@@ -12,6 +12,10 @@ use rusty_php::sapi::Sapi;
 use rusty_php::sys::zend::stream::ZendFileHandle;
 use rusty_php::sys::zend::Zval;
 use rusty_php::PhpInit;
+use rusty_php_sys::php_execute_script;
+use rusty_php_sys::streams::_php_stream_open_wrapper_ex;
+use rusty_php_sys::zend::execute::zend_eval_string_ex;
+use rusty_php_sys::zend::stream::zend_stream_init_filename;
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
@@ -76,56 +80,64 @@ fn main() -> Result<(), Box<dyn Error>> {
         .startup_request()
         .unwrap();
 
-    php.as_ref().streams._php_stream_open_wrapper_ex(
-        create_cstring(b"php://stdin").into_raw(),
-        create_cstring(b"rb").into_raw(),
-        0,
-        null_mut(),
-        null_mut(),
-    );
+    unsafe {
+        _php_stream_open_wrapper_ex(
+            create_cstring(b"php://stdin").into_raw(),
+            create_cstring(b"rb").into_raw(),
+            0,
+            null_mut(),
+            null_mut(),
+        );
 
-    php.as_ref().streams._php_stream_open_wrapper_ex(
-        create_cstring(b"php://stdout").into_raw(),
-        create_cstring(b"wb").into_raw(),
-        0,
-        null_mut(),
-        null_mut(),
-    );
+        _php_stream_open_wrapper_ex(
+            create_cstring(b"php://stdout").into_raw(),
+            create_cstring(b"wb").into_raw(),
+            0,
+            null_mut(),
+            null_mut(),
+        );
 
-    php.as_ref().streams._php_stream_open_wrapper_ex(
-        create_cstring(b"php://stderr").into_raw(),
-        create_cstring(b"wb").into_raw(),
-        0,
-        null_mut(),
-        null_mut(),
-    );
+        _php_stream_open_wrapper_ex(
+            create_cstring(b"php://stderr").into_raw(),
+            create_cstring(b"wb").into_raw(),
+            0,
+            null_mut(),
+            null_mut(),
+        );
+    }
 
     let cli = Cli::parse();
     match &cli.action {
         Action::Eval { script } => {
             let mut retval = MaybeUninit::<Zval>::uninit();
 
-            php.as_ref().zend.execute.zend_eval_string_ex(
-                create_cstring(script.as_bytes()).into_raw(),
-                retval.as_mut_ptr(),
-                create_cstring(b"Command line begin code").into_raw(),
-                true,
-            );
+            unsafe {
+                zend_eval_string_ex(
+                    create_cstring(script.as_bytes()).into_raw(),
+                    retval.as_mut_ptr(),
+                    create_cstring(b"Command line begin code").into_raw(),
+                    true,
+                );
+            }
 
             debug!("EVAL: {:?}", unsafe { retval.assume_init() });
         }
         Action::Execute { filename } => {
             let mut file_handle = MaybeUninit::<ZendFileHandle>::uninit();
 
-            php.as_ref().zend.stream.zend_stream_init_filename(
-                file_handle.as_mut_ptr(),
-                create_cstring(filename.as_bytes()).into_raw(),
-            );
+            unsafe {
+                zend_stream_init_filename(
+                    file_handle.as_mut_ptr(),
+                    create_cstring(filename.as_bytes()).into_raw(),
+                );
+            }
 
             let mut file_handle = unsafe { file_handle.assume_init() };
             file_handle.primary_script = true;
 
-            php.as_ref().php_execute_script(&mut file_handle);
+            unsafe {
+                php_execute_script(&mut file_handle);
+            }
         }
     };
 
