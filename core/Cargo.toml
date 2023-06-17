@@ -11,3 +11,8 @@ map_in_place = "0.1.0"
 tracing = "0.1.37"
 
 rusty-php-sys = { path = "../sys" }
+
+[features]
+default = ["zts"]
+
+zts = ["rusty-php-sys/zts"]

@@ -85,6 +85,11 @@ impl Php {
     where
         S: SapiExt,
     {
+        #[cfg(feature = "zts")]
+        unsafe {
+            sys::php_tsrm_startup()
+        };
+
         sapi.register();
 
         let sapi_module = Arc::new(sapi.into_raw());

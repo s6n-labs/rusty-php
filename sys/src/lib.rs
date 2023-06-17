@@ -23,4 +23,10 @@ extern "C" {
     pub fn php_execute_script(primary_file: *mut ZendFileHandle);
     pub fn sapi_startup(sf: *mut SapiModuleStruct);
     pub fn sapi_shutdown();
+
+    #[cfg(feature = "zts")]
+    pub fn php_tsrm_startup() -> bool;
+
+    #[cfg(feature = "zts")]
+    pub fn php_tsrm_startup_ex(expected_threads: isize) -> bool;
 }
