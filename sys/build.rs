@@ -1,5 +1,6 @@
 fn main() {
-    println!("cargo:rustc-link-search=native=/usr/local/lib");
+    println!("cargo:rustc-link-search=/usr/local/lib");
+    println!("cargo:rustc-link-search=/usr/lib");
     println!("cargo:rustc-link-lib=dylib=php");
     // println!("cargo:rustc-link-lib=dylib=ssl");
     // println!("cargo:rustc-link-lib=dylib=crypto");

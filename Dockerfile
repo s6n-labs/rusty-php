@@ -46,4 +46,5 @@ FROM php
 
 COPY --from=rust /usr/local/src/rusty-php/target/release/rusty-php-cli /usr/bin/rusty-php
 
+ENV LD_LIBRARY_PATH="/usr/local/lib"
 ENTRYPOINT ["/usr/bin/rusty-php"]
