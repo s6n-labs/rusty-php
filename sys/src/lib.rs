@@ -12,6 +12,9 @@ pub mod sapi;
 pub mod streams;
 pub mod zend;
 
+#[cfg(feature = "zts")]
+pub mod tsrm;
+
 extern "C" {
     pub fn php_module_startup(
         sf: *mut SapiModuleStruct,
