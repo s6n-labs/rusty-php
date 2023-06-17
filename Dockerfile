@@ -23,14 +23,13 @@ FROM rustlang/rust:nightly-bookworm-slim AS rust
 WORKDIR /usr/local/src/rusty-php
 
 COPY ./Cargo.toml ./Cargo.lock ./
-COPY ./build/Cargo.toml ./build/
 COPY ./cli/Cargo.toml ./cli/
 COPY ./core/Cargo.toml ./core/
 COPY ./http/Cargo.toml ./http/
 COPY ./sys/Cargo.toml ./sys/
-RUN mkdir -p ./build/src ./cli/src ./core/src ./http/src ./sys/src && \
+RUN mkdir -p ./cli/src ./core/src ./http/src ./sys/src && \
     echo 'fn main() {}' | tee ./cli/src/main.rs | tee ./http/src/main.rs && \
-    touch ./build/src/lib.rs ./core/src/lib.rs ./sys/src/lib.rs && \
+    touch ./core/src/lib.rs ./sys/src/lib.rs && \
     cargo build --release
 
 COPY --from=php /lib/ /lib/
