@@ -14,3 +14,8 @@ tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 
 rusty-php = { path = "../core" }
 rusty-php-sys = { path = "../sys" }
+
+[features]
+default = []
+
+zts = ["rusty-php/zts", "rusty-php-sys/zts"]

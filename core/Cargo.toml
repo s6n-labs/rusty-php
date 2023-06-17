@@ -13,6 +13,6 @@ tracing = "0.1.37"
 rusty-php-sys = { path = "../sys" }
 
 [features]
-default = ["zts"]
+default = []
 
 zts = ["rusty-php-sys/zts"]
