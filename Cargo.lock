@@ -326,6 +326,7 @@ dependencies = [
  "clap",
  "lazy_static",
  "libc",
+ "map_in_place",
  "rusty-php",
  "rusty-php-sys",
  "tracing",
