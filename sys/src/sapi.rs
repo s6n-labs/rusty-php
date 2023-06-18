@@ -164,7 +164,7 @@ extern "C" {
 macro_rules! sg {
     ($v: ident) => {
         $crate::zend::zend_tsrmg_fast!(
-            $crate::sapi::sapi_globals_id,
+            $crate::sapi::sapi_globals_offset,
             *mut $crate::sapi::SapiGlobalsStruct,
             $v
         )

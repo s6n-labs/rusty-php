@@ -11,6 +11,7 @@ RUN ./buildconf && \
         --disable-cgi \
         --enable-debug \
         --enable-embed \
+    	--enable-zts \
         --disable-zend-signals && \
     make -j "$(nproc)" && \
     make install

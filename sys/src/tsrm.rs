@@ -1,5 +1,4 @@
-use std::ffi::c_int;
-pub use std::ffi::c_void;
+use std::ffi::{c_int, c_void};
 use std::ptr::null_mut;
 
 pub type TsRsrcId = c_int;

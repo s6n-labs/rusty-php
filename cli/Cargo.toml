@@ -17,6 +17,6 @@ rusty-php = { path = "../core" }
 rusty-php-sys = { path = "../sys" }
 
 [features]
-default = []
+default = ["zts"]
 
 zts = ["rusty-php/zts", "rusty-php-sys/zts"]
