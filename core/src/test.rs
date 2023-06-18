@@ -1,6 +1,7 @@
 use std::ffi::CString;
 use std::mem::MaybeUninit;
 
+use rusty_php_sys::zend::execute::zend_eval_string_ex;
 use rusty_php_sys::zend::Zval;
 
 use crate::callback::{Callback, SapiCallback};
@@ -31,29 +32,27 @@ impl Sapi for SapiImpl {
     }
 }
 
-pub struct TestBedRequest<'r> {
-    bed: &'r TestBed,
-    _request: PhpRequest<'r>,
+pub struct TestBedRequest {
+    _request: PhpRequest,
 }
 
-impl<'r> TestBedRequest<'r> {
-    pub fn startup(bed: &'r TestBed) -> Self {
+impl TestBedRequest {
+    pub fn startup(bed: TestBed) -> Self {
         let request = bed.php.startup_request().unwrap();
-        Self {
-            bed,
-            _request: request,
-        }
+        Self { _request: request }
     }
 
     pub fn eval(&self, contents: &str) -> Zval {
         let mut retval = MaybeUninit::<Zval>::uninit();
 
-        self.bed.php.as_ref().zend.execute.zend_eval_string_ex(
-            unsafe { CString::from_vec_unchecked(contents.as_bytes().to_vec()) }.into_raw(),
-            retval.as_mut_ptr(),
-            unsafe { CString::from_vec_unchecked(b"TestBed".to_vec()) }.into_raw(),
-            true,
-        );
+        unsafe {
+            zend_eval_string_ex(
+                CString::from_vec_unchecked(contents.as_bytes().to_vec()).into_raw(),
+                retval.as_mut_ptr(),
+                CString::from_vec_unchecked(b"TestBed".to_vec()).into_raw(),
+                true,
+            );
+        }
 
         unsafe { retval.assume_init() }
     }
@@ -74,7 +73,7 @@ impl TestBed {
         }
     }
 
-    pub fn startup(&self) -> TestBedRequest {
+    pub fn startup(self) -> TestBedRequest {
         TestBedRequest::startup(self)
     }
 

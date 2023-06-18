@@ -16,7 +16,7 @@ pub trait Sapi {
     fn callback(&self) -> Callback;
 }
 
-pub(crate) trait SapiExt {
+pub trait SapiExt {
     fn register(&self);
     fn into_raw(self) -> SapiModuleStruct;
 }
@@ -47,13 +47,13 @@ where
             send_header: None,
             read_post: on_read_post,
             read_cookies: on_read_cookies,
-            register_server_variables: on_register_server_variables,
+            register_server_variables: None,
             log_message: on_log_message,
             get_request_time: on_get_request_time,
             terminate_process: on_terminate_process,
             php_ini_path_override: null_mut(),
             default_post_reader: on_default_post_reader,
-            treat_data: on_treat_data,
+            treat_data: None,
             executable_location: create_cstring(self.executable_location()).into_raw(),
             php_ini_ignore: 0,
             php_ini_ignore_cwd: 0,

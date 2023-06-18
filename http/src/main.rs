@@ -20,6 +20,7 @@ use hyper::{Body, HeaderMap, Method, Request, Response};
 use rusty_php::callback::{Callback, SapiCallback};
 use rusty_php::sapi::Sapi;
 use rusty_php::sys::sapi::{SapiHeaderStruct, SapiHeadersStruct, SAPI_HEADER_SENT_SUCCESSFULLY};
+use rusty_php::sys::variables::php_register_variable_safe;
 use rusty_php::sys::zend::Zval;
 use rusty_php::zend::llist::ZLlist;
 use rusty_php::{PhpInit, PhpModule};
@@ -52,14 +53,14 @@ fn setenv(key: &str, value: &str, track_vars_array: &mut Zval) {
     let value = value.as_bytes().to_vec();
     let val_len = value.len();
 
-    THREAD_PHP.with(|php| {
-        php.as_ref().variables.php_register_variable_safe(
+    unsafe {
+        php_register_variable_safe(
             unsafe { CString::from_vec_unchecked(key) }.into_raw(),
             unsafe { CString::from_vec_unchecked(value) }.into_raw(),
             val_len,
             track_vars_array,
         );
-    });
+    }
 }
 
 struct SapiCallbackImpl;
