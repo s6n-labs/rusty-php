@@ -2,6 +2,7 @@ use std::ffi::{c_char, c_double, c_int, c_uchar, c_uint, c_void};
 
 use libc::{gid_t, uid_t};
 
+use crate::streams::PhpStream;
 use crate::zend::*;
 
 pub const SAPI_HEADER_SENT_SUCCESSFULLY: c_int = 1;
@@ -21,8 +22,8 @@ pub struct SapiHeadersStruct {
     headers: ZendLlist,
     http_response_code: c_int,
     send_default_content_type: c_uchar,
-    mimetype: *mut char,
-    http_status_line: *mut char,
+    mimetype: *mut c_char,
+    http_status_line: *mut c_char,
 }
 
 #[repr(C)]
@@ -34,6 +35,64 @@ pub enum SapiHeaderOpEnum {
     SapiHeaderDelete,
     SapiHeaderDeleteAll,
     SapiHeaderSetStatus,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct SapiPostEntry {
+    pub content_type: *mut c_char,
+    pub content_type_len: u32,
+    pub post_reader: extern "C" fn(),
+    pub post_handler: extern "C" fn(content_type_dup: *mut c_char, arg: *mut c_void),
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct SapiRequestInfo {
+    pub request_method: *const c_char,
+    pub query_string: *mut c_char,
+    pub cookie_data: *mut c_char,
+    pub content_length: ZendLong,
+    pub path_translated: *mut c_char,
+    pub request_uri: *mut c_char,
+    pub request_body: *mut PhpStream,
+    pub content_type: *const c_char,
+    pub headers_only: bool,
+    pub no_headers: bool,
+    pub headers_read: bool,
+    pub post_entry: *mut SapiPostEntry,
+    pub content_type_dup: *mut c_char,
+    pub auth_user: *mut c_char,
+    pub auth_password: *mut c_char,
+    pub auth_digest: *mut c_char,
+    pub argv0: *mut c_char,
+    pub current_user: *mut c_char,
+    pub current_user_length: c_int,
+    pub argc: c_int,
+    pub argv: *mut *mut c_char,
+    pub proto_num: c_int,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct SapiGlobalsStruct {
+    pub server_context: *mut c_void,
+    pub request_info: SapiRequestInfo,
+    pub sapi_headers: SapiHeadersStruct,
+    pub read_post_bytes: i64,
+    pub post_read: c_uchar,
+    pub headers_sent: c_uchar,
+    pub global_stat: ZendStat,
+    pub default_mimetype: *mut c_char,
+    pub default_charset: *mut c_char,
+    pub rfc1867_uploaded_files: *mut HashTable,
+    pub post_max_size: ZendLong,
+    pub options: c_int,
+    pub sapi_started: bool,
+    pub global_request_time: c_double,
+    pub known_post_content_types: HashTable,
+    pub callback_func: Zval,
+    // TODO: pub zend_fcall_info_cache: ZendFcallInfoCache
 }
 
 #[repr(C)]
@@ -50,22 +109,24 @@ pub struct SapiModuleStruct {
     pub get_stat: extern "C" fn() -> *mut ZendStat,
     pub getenv: extern "C" fn(name: *const c_char, name_len: usize) -> *mut c_char,
     pub sapi_error: unsafe extern "C" fn(ty: c_int, error_msg: *const c_char, ...),
-    pub header_handler: extern "C" fn(
-        sapi_handler: *mut SapiHeaderStruct,
-        op: SapiHeaderOpEnum,
-        sapi_headers: *mut SapiHeadersStruct,
-    ) -> c_int,
+    pub header_handler: Option<
+        extern "C" fn(
+            sapi_handler: *mut SapiHeaderStruct,
+            op: SapiHeaderOpEnum,
+            sapi_headers: *mut SapiHeadersStruct,
+        ) -> c_int,
+    >,
     pub send_headers: extern "C" fn(sapi_headers: *mut SapiHeadersStruct) -> c_int,
     pub send_header: extern "C" fn(sapi_header: *mut SapiHeaderStruct, server_context: *mut c_void),
     pub read_post: extern "C" fn(buffer: *mut c_char, count_bytes: usize) -> usize,
     pub read_cookies: extern "C" fn() -> *mut c_char,
-    pub register_server_variables: extern "C" fn(track_vars_array: *mut Zval),
+    pub register_server_variables: Option<extern "C" fn(track_vars_array: *mut Zval)>,
     pub log_message: extern "C" fn(message: *const c_char, syslog_type_int: c_int),
     pub get_request_time: extern "C" fn(request_time: *mut c_double) -> ZendResult,
     pub terminate_process: extern "C" fn(),
     pub php_ini_path_override: *mut c_char,
     pub default_post_reader: extern "C" fn(),
-    pub treat_data: extern "C" fn(arg: c_int, str: *mut c_char, dest_array: *mut Zval),
+    pub treat_data: Option<extern "C" fn(arg: c_int, str: *mut c_char, dest_array: *mut Zval)>,
     pub executable_location: *mut c_char,
     pub php_ini_ignore: c_int,
     pub php_ini_ignore_cwd: c_int,
@@ -86,3 +147,36 @@ pub struct SapiModuleStruct {
     pub additional_functions: *const ZendFunctionEntry,
     pub input_filter_init: extern "C" fn() -> c_uint,
 }
+
+#[cfg(feature = "zts")]
+extern "C" {
+    pub static sapi_globals_id: c_int;
+    pub static sapi_globals_offset: usize;
+}
+
+#[cfg(not(feature = "zts"))]
+extern "C" {
+    pub static mut sapi_globals: SapiGlobalsStruct;
+}
+
+#[cfg(feature = "zts")]
+#[macro_export]
+macro_rules! sg {
+    ($v: ident) => {
+        $crate::zend::zend_tsrmg_fast!(
+            $crate::sapi::sapi_globals_offset,
+            *mut $crate::sapi::SapiGlobalsStruct,
+            $v
+        )
+    };
+}
+
+#[cfg(not(feature = "zts"))]
+#[macro_export]
+macro_rules! sg {
+    ($v: ident) => {
+        $crate::sapi::sapi_globals.$v
+    };
+}
+
+pub use sg;

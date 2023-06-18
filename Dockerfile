@@ -9,14 +9,16 @@ RUN ./buildconf && \
     ./configure \
         --disable-all \
         --disable-cgi \
+        --enable-debug \
         --enable-embed \
-        --enable-zts \
-        --enable-zend-max-execution-timers \
+    	--enable-zts \
         --disable-zend-signals && \
     make -j "$(nproc)" && \
     make install
 
 RUN php --version
+
+ENV LD_LIBRARY_PATH="/usr/local/lib"
 
 FROM rustlang/rust:nightly-bookworm-slim AS rust
 
@@ -42,9 +44,17 @@ COPY --from=php /usr/local/php/ /usr/local/php
 COPY . .
 RUN cargo build --release
 
-FROM php
+ENV LD_LIBRARY_PATH="/usr/local/lib"
+
+FROM php AS release
 
 COPY --from=rust /usr/local/src/rusty-php/target/release/rusty-php-cli /usr/bin/rusty-php
 
-ENV LD_LIBRARY_PATH="/usr/local/lib"
 ENTRYPOINT ["/usr/bin/rusty-php"]
+
+FROM release AS debug
+
+RUN apt-get install -qq gdbserver
+
+EXPOSE 1234
+ENTRYPOINT ["gdbserver", ":1234", "/usr/bin/rusty-php"]

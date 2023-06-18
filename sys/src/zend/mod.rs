@@ -2,12 +2,12 @@ use std::ffi::{c_char, c_double, c_uchar, c_void};
 use std::fmt::{Debug, Formatter};
 use std::mem::ManuallyDrop;
 
-use nix::sys::stat::FileStat;
+use libc::stat;
 
-use crate::zend::long::{ZendLong, ZendUlong};
-
+pub mod compile;
 pub mod execute;
 pub mod stream;
+pub mod string;
 
 pub const IS_UNDEF: u32 = 0;
 pub const IS_NULL: u32 = 1;
@@ -67,6 +67,8 @@ mod long {
     pub type ZendLong = i32;
     pub type ZendUlong = u32;
 }
+
+pub use long::{ZendLong, ZendUlong};
 
 #[repr(C)]
 pub union ZendRefCountedHTypeInfo {
@@ -194,7 +196,7 @@ pub struct Zval {
     pub u2: u32,
 }
 
-pub type ZendStat = FileStat;
+pub type ZendStat = stat;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -231,3 +233,14 @@ pub struct ZendLlist {
 extern "C" {
     pub fn zend_signal_startup();
 }
+
+#[cfg(feature = "zts")]
+#[macro_export]
+macro_rules! zend_tsrmg_fast {
+    ($offset: expr, $ty: ty, $element: ident) => {
+        $crate::tsrm::tsrmg_fast!($offset, $ty, $element)
+    };
+}
+
+#[cfg(feature = "zts")]
+pub use zend_tsrmg_fast;
